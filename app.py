@@ -49,6 +49,7 @@ st.set_page_config(page_title="RSU Manager", layout="wide")
 st.title("📊 RSU Management Dashboard")
 
 # Sidebar inputs
+st.sidebar.markdown("This is a demo app and not provide any financial advise.All data is stored in the browser session only—nothing is sent to a server.")
 st.sidebar.header("📝 RSU Input")
 company = st.sidebar.text_input("Company Name", "TechCorp")
 tax_rate = st.sidebar.slider("Marginal Tax Rate (%)", 0, 50, 45)
@@ -87,12 +88,11 @@ if st.sidebar.button("📂 Load Sample Data"):
     st.sidebar.success("Sample data loaded successfully!")
 
 # Upload data
-st.sidebar.markdown("### 📁 Import Data")
 vesting_file = st.sidebar.file_uploader("Upload Vesting Schedule (Excel)", type=["xlsx"], key="vesting")
 sales_file = st.sidebar.file_uploader("Upload RSU Sales Schedule (Excel)", type=["xlsx"], key="sales")
 
+
 # Add Buy Me a Coffee section
-st.sidebar.markdown("---")
 st.sidebar.markdown("### ☕ Support the Developer")
 st.sidebar.markdown("""
 <a href="https://buymeacoffee.com/cloudnamaste" target="_blank">

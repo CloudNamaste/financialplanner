@@ -29,7 +29,3 @@ The application has a functional prototype with three main tabs:
 1. Vesting Schedule
 2. RSU Sell Tracker
 3. Summary
-
-## Known Issues
-- There appears to be a bug in the Financial Year calculation that required a fix (line 138-141)
-- Excel files cannot be directly read by tools, limiting our ability to inspect sample data
