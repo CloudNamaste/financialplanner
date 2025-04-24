@@ -405,8 +405,9 @@ with tab2:
                 ax3.set_ylabel('Price ($)')
                 ax3.set_title('Stock Performance: Vest Price vs Sale Price', fontweight='bold')
                 ax3.set_xticks([r + barWidth/2 for r in range(len(performance_df))])
-                ax3.set_xticklabels([d.strftime('%Y-%m-%d') for d in performance_df['Date']], rotation=45)
-                
+                ax3.set_xticklabels([d.strftime('%Y-%m-%d') if pd.notnull(d) else '' for d in performance_df['Date']], rotation=45)
+
+
                 # Add value labels on top of bars
                 for i, v in enumerate(performance_df['Vest Price']):
                     ax3.text(i, v + 0.1, f"${v:,.2f}", ha='center', va='bottom', fontsize=9)
@@ -579,7 +580,7 @@ with tab2:
                 ax3.set_ylabel('Price ($)')
                 ax3.set_title('Stock Performance: Vest Price vs Sale Price', fontweight='bold')
                 ax3.set_xticks([r + barWidth/2 for r in range(len(performance_df))])
-                ax3.set_xticklabels([d.strftime('%Y-%m-%d') for d in performance_df['Date']], rotation=45)
+                ax3.set_xticklabels([d.strftime('%Y-%m-%d') if pd.notnull(d) else '' for d in performance_df['Date']], rotation=45)
                 
                 # Add value labels on top of bars
                 for i, v in enumerate(performance_df['Vest Price']):
