@@ -49,7 +49,6 @@ st.set_page_config(page_title="RSU Manager", layout="wide")
 st.title("📊 RSU Management Dashboard")
 
 # Sidebar inputs
-st.sidebar.markdown("This is a demo app and not provide any financial advise.All data is stored in the browser session only—nothing is sent to a server.")
 st.sidebar.header("📝 RSU Input")
 company = st.sidebar.text_input("Company Name", "TechCorp")
 tax_rate = st.sidebar.slider("Marginal Tax Rate (%)", 0, 50, 45)
@@ -88,11 +87,12 @@ if st.sidebar.button("📂 Load Sample Data"):
     st.sidebar.success("Sample data loaded successfully!")
 
 # Upload data
+st.sidebar.markdown("### 📁 Import Data")
 vesting_file = st.sidebar.file_uploader("Upload Vesting Schedule (Excel)", type=["xlsx"], key="vesting")
 sales_file = st.sidebar.file_uploader("Upload RSU Sales Schedule (Excel)", type=["xlsx"], key="sales")
 
-
 # Add Buy Me a Coffee section
+st.sidebar.markdown("---")
 st.sidebar.markdown("### ☕ Support the Developer")
 st.sidebar.markdown("""
 <a href="https://buymeacoffee.com/cloudnamaste" target="_blank">
@@ -132,7 +132,15 @@ with tab1:
             num_rows="dynamic",
             use_container_width=True,
             hide_index=True,
-            key="vesting_data_editor"
+            key="vesting_data_editor",
+            column_config={
+                "Vesting Date": st.column_config.DateColumn(
+                    "Vesting Date",
+                    help="Date when RSUs vested",
+                    format="YYYY-MM-DD",
+                    step=1,
+                ),
+            }
         )
         
         # Process the edited data only if it has changed
@@ -152,65 +160,71 @@ with tab1:
             # Group by Financial Year
             fy_vesting = schedule.groupby("Financial Year")[["RSU Vested", "Gross Value", "Tax Payable", "Net Value"]].sum().reset_index()
             
-            # Create bar chart
-            fig, ax = plt.subplots()
-            
-            # Set width of bars
-            barWidth = 0.25
-            
-            # Set position of bars on X axis
-            r1 = range(len(fy_vesting))
-            r2 = [x + barWidth for x in r1]
-            r3 = [x + barWidth for x in r2]
-            
-            # Create bars with theme colors
-            ax.bar(r1, fy_vesting['Gross Value'], width=barWidth, label='Gross Value', color='#4e79a7')
-            ax.bar(r2, fy_vesting['Tax Payable'], width=barWidth, label='Tax Payable', color='#e15759')
-            ax.bar(r3, fy_vesting['Net Value'], width=barWidth, label='Net Value', color='#59a14f')
-            
-            # Add labels and title
-            ax.set_xlabel('Financial Year')
-            ax.set_ylabel('Amount ($)')
-            ax.set_title('RSU Vesting Schedule by Financial Year', fontweight='bold')
-            ax.set_xticks([r + barWidth for r in range(len(fy_vesting))])
-            ax.set_xticklabels(fy_vesting['Financial Year'])
-            
-            # Add value labels on top of bars
-            for i, v in enumerate(fy_vesting['Gross Value']):
-                ax.text(i, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
-            
-            for i, v in enumerate(fy_vesting['Tax Payable']):
-                ax.text(i + barWidth, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
-                
-            for i, v in enumerate(fy_vesting['Net Value']):
-                ax.text(i + 2*barWidth, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
-            
-            # Add legend with better positioning
-            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
-            
-            # Adjust layout to make room for legend
-            plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-            
-            st.pyplot(fig)
-            
-            # Add a second chart for RSUs vested by year
-            st.markdown("### 📈 RSUs Vested by Year")
-            fig2, ax2 = plt.subplots()
-            bars = ax2.bar(fy_vesting['Financial Year'], fy_vesting['RSU Vested'], color='#b07aa1')
-            ax2.set_xlabel('Financial Year')
-            ax2.set_ylabel('Number of RSUs')
-            ax2.set_title('Total RSUs Vested by Financial Year', fontweight='bold')
-            
-            # Add value labels on top of bars
-            for bar in bars:
-                height = bar.get_height()
-                ax2.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                        f'{height:,.0f}', ha='center', va='bottom', fontsize=9)
-            
-            # Adjust layout
-            plt.tight_layout()
-            
-            st.pyplot(fig2)
+            # Only create charts if we have enough data
+            if not fy_vesting.empty and len(fy_vesting) > 0:
+                # Only create charts if we have enough data
+                if not fy_vesting.empty and len(fy_vesting) > 0:
+                    # Create bar chart
+                    fig, ax = plt.subplots()
+                    
+                    # Set width of bars
+                    barWidth = 0.25
+                    
+                    # Set position of bars on X axis
+                    r1 = range(len(fy_vesting))
+                    r2 = [x + barWidth for x in r1]
+                    r3 = [x + barWidth for x in r2]
+                    
+                    # Create bars with theme colors
+                    ax.bar(r1, fy_vesting['Gross Value'], width=barWidth, label='Gross Value', color='#4e79a7')
+                    ax.bar(r2, fy_vesting['Tax Payable'], width=barWidth, label='Tax Payable', color='#e15759')
+                    ax.bar(r3, fy_vesting['Net Value'], width=barWidth, label='Net Value', color='#59a14f')
+                    
+                    # Add labels and title
+                    ax.set_xlabel('Financial Year')
+                    ax.set_ylabel('Amount ($)')
+                    ax.set_title('RSU Vesting Schedule by Financial Year', fontweight='bold')
+                    ax.set_xticks([r + barWidth for r in range(len(fy_vesting))])
+                    ax.set_xticklabels(fy_vesting['Financial Year'])
+                    
+                    # Add value labels on top of bars
+                    for i, v in enumerate(fy_vesting['Gross Value']):
+                        ax.text(i, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
+                    
+                    for i, v in enumerate(fy_vesting['Tax Payable']):
+                        ax.text(i + barWidth, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
+                        
+                    for i, v in enumerate(fy_vesting['Net Value']):
+                        ax.text(i + 2*barWidth, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
+                    
+                    # Add legend with better positioning
+                    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3)
+                    
+                    # Adjust layout to make room for legend
+                    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+                    
+                    st.pyplot(fig)
+                    
+                    # Add a second chart for RSUs vested by year
+                    st.markdown("### 📈 RSUs Vested by Year")
+                    fig2, ax2 = plt.subplots()
+                    bars = ax2.bar(fy_vesting['Financial Year'], fy_vesting['RSU Vested'], color='#b07aa1')
+                    ax2.set_xlabel('Financial Year')
+                    ax2.set_ylabel('Number of RSUs')
+                    ax2.set_title('Total RSUs Vested by Financial Year', fontweight='bold')
+                    
+                    # Add value labels on top of bars
+                    for bar in bars:
+                        height = bar.get_height()
+                        ax2.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                                f'{height:,.0f}', ha='center', va='bottom', fontsize=9)
+                    
+                    # Adjust layout
+                    plt.tight_layout()
+                    
+                    st.pyplot(fig2)
+                else:
+                    st.info("Not enough data to generate charts. Please add more vesting data with dates.")
         
         # Export to Excel
         
@@ -228,7 +242,19 @@ with tab1:
         # Add button to clear all data
         if st.button("🗑️ Clear All Vesting Data"):
             if st.session_state.get("confirm_clear_vesting", False):
-                st.session_state["vesting_data"] = pd.DataFrame()
+                # Create an empty DataFrame with the proper structure
+                empty_vesting_df = pd.DataFrame({
+                    "Vesting Date": pd.Series(dtype='datetime64[ns]'),
+                    "RSU Vested": pd.Series(dtype='float64'),
+                    "FMV at Vesting": pd.Series(dtype='float64'),
+                    "Marginal Tax Rate": pd.Series(dtype='float64'),
+                    "Gross Value": pd.Series(dtype='float64'),
+                    "Tax Payable": pd.Series(dtype='float64'),
+                    "Net Value": pd.Series(dtype='float64')
+                })
+                # Process the empty DataFrame to ensure it has all required columns
+                empty_vesting_df = tax_engine.process_vesting_data(empty_vesting_df, tax_rate)
+                st.session_state["vesting_data"] = empty_vesting_df
                 st.rerun()
             else:
                 st.session_state["confirm_clear_vesting"] = True
@@ -258,14 +284,16 @@ with tab1:
                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     else:
         # Create an empty DataFrame with the necessary columns for vesting data
+        # Create an empty DataFrame with the necessary columns for vesting data
+        # Initialize with proper data types, especially for date columns
         empty_vesting_df = pd.DataFrame({
-            "Vesting Date": [],
-            "RSU Vested": [],
-            "FMV at Vesting": [],
-            "Marginal Tax Rate": [],
-            "Gross Value": [],
-            "Tax Payable": [],
-            "Net Value": []
+            "Vesting Date": pd.Series(dtype='datetime64[ns]'),
+            "RSU Vested": pd.Series(dtype='float64'),
+            "FMV at Vesting": pd.Series(dtype='float64'),
+            "Marginal Tax Rate": pd.Series(dtype='float64'),
+            "Gross Value": pd.Series(dtype='float64'),
+            "Tax Payable": pd.Series(dtype='float64'),
+            "Net Value": pd.Series(dtype='float64')
         })
         
         # Process the empty DataFrame to ensure it has all required columns
@@ -285,7 +313,15 @@ with tab1:
             num_rows="dynamic",
             use_container_width=True,
             hide_index=True,
-            key="vesting_data_editor_empty"
+            key="vesting_data_editor_empty",
+            column_config={
+                "Vesting Date": st.column_config.DateColumn(
+                    "Vesting Date",
+                    help="Date when RSUs vested",
+                    format="YYYY-MM-DD",
+                    step=1,
+                ),
+            }
         )
         
         # Process the edited data only if it has changed and is not empty
@@ -322,7 +358,19 @@ with tab2:
             num_rows="dynamic",
             use_container_width=True,
             hide_index=True,
-            key="sales_data_editor_upload"  # Add a unique key for this data editor
+            key="sales_data_editor_upload",  # Add a unique key for this data editor
+            column_config={
+                "Sell Date": st.column_config.DateColumn(
+                    "Sell Date",
+                    help="Date when RSUs were sold",
+                    format="YYYY-MM-DD",
+                    step=1,
+                ),
+                "Held > 12 Months": st.column_config.CheckboxColumn(
+                    "Held > 12 Months",
+                    help="Check if shares were held for more than 12 months (for CGT discount)",
+                ),
+            }
         )
         
         # Process the edited data only if it has changed
@@ -336,7 +384,7 @@ with tab2:
             st.rerun()
         
         # Create visualizations
-        if not sell_data.empty:
+        if not sell_data.empty and len(sell_data) > 0:
             st.markdown("### 📊 Visualizations")
             
             # Create tabs for different visualizations
@@ -352,36 +400,37 @@ with tab2:
                     # Group by Financial Year
                     fy_data = sell_data.groupby("Financial Year")["Capital Gain"].sum().reset_index()
                     
-                    # Create bar chart
-                    fig2, ax2 = plt.subplots()
-                    bars = ax2.bar(fy_data['Financial Year'], fy_data['Capital Gain'],
-                                  color=['#59a14f' if x >= 0 else '#e15759' for x in fy_data['Capital Gain']])
-                    ax2.set_xlabel('Financial Year')
-                    ax2.set_ylabel('Capital Gain/Loss ($)')
-                    ax2.set_title('Capital Gain/Loss by Financial Year', fontweight='bold')
-                    
-                    # Add value labels on top of bars
-                    for bar in bars:
-                        height = bar.get_height()
-                        value = height if height >= 0 else height
-                        if height >= 0:
-                            ax2.text(bar.get_x() + bar.get_width()/2., height + (0.01 * abs(height)),
-                                    f'${value:,.2f}', ha='center', va='bottom', fontsize=9)
-                        else:
-                            ax2.text(bar.get_x() + bar.get_width()/2., height - (0.01 * abs(height)),
-                                    f'${value:,.2f}', ha='center', va='top', fontsize=9)
-                    
-                    # Adjust layout
-                    plt.tight_layout()
-                    
-                    st.pyplot(fig2)
+                    # Check if we have valid data for the chart
+                    if not fy_data.empty and len(fy_data) > 0:
+                        # Create bar chart
+                        fig2, ax2 = plt.subplots()
+                        bars = ax2.bar(fy_data['Financial Year'], fy_data['Capital Gain'],
+                                      color=['#59a14f' if x >= 0 else '#e15759' for x in fy_data['Capital Gain']])
+                        ax2.set_xlabel('Financial Year')
+                        ax2.set_ylabel('Capital Gain/Loss ($)')
+                        ax2.set_title('Capital Gain/Loss by Financial Year', fontweight='bold')
+                        
+                        # Add value labels on top of bars
+                        for bar in bars:
+                            height = bar.get_height()
+                            value = height if height >= 0 else height
+                            if height >= 0:
+                                ax2.text(bar.get_x() + bar.get_width()/2., height + (0.01 * abs(height)),
+                                        f'${value:,.2f}', ha='center', va='bottom', fontsize=9)
+                            else:
+                                ax2.text(bar.get_x() + bar.get_width()/2., height - (0.01 * abs(height)),
+                                        f'${value:,.2f}', ha='center', va='top', fontsize=9)
+                        
+                        # Adjust layout
+                        plt.tight_layout()
+                        
+                        st.pyplot(fig2)
+                    else:
+                        st.info("Not enough data to generate capital gain chart. Please add more sales data.")
                 else:
                     st.info("Financial Year data not available. Please ensure your data includes dates.")
             
             with viz_tab2:
-                # New visualization - Stock Performance as bar chart
-                fig3, ax3 = plt.subplots()
-                
                 # Create a DataFrame for comparison
                 performance_df = pd.DataFrame({
                     'Date': sell_data['Sell Date'],
@@ -389,39 +438,59 @@ with tab2:
                     'Sale Price': sell_data['Sale Price']
                 }).sort_values('Date')
                 
-                # Set width of bars
-                barWidth = 0.4
-                
-                # Set position of bars on X axis
-                r1 = range(len(performance_df))
-                r2 = [x + barWidth for x in r1]
-                
-                # Create bars
-                ax3.bar(r1, performance_df['Vest Price'], width=barWidth, label='FMV at Vesting', color='#4e79a7')
-                ax3.bar(r2, performance_df['Sale Price'], width=barWidth, label='Sale Price', color='#f28e2c')
-                
-                # Add labels and title
-                ax3.set_xlabel('Sale Date')
-                ax3.set_ylabel('Price ($)')
-                ax3.set_title('Stock Performance: Vest Price vs Sale Price', fontweight='bold')
-                ax3.set_xticks([r + barWidth/2 for r in range(len(performance_df))])
-                ax3.set_xticklabels([d.strftime('%Y-%m-%d') if pd.notnull(d) else '' for d in performance_df['Date']], rotation=45)
-
-
-                # Add value labels on top of bars
-                for i, v in enumerate(performance_df['Vest Price']):
-                    ax3.text(i, v + 0.1, f"${v:,.2f}", ha='center', va='bottom', fontsize=9)
-                
-                for i, v in enumerate(performance_df['Sale Price']):
-                    ax3.text(i + barWidth, v + 0.1, f"${v:,.2f}", ha='center', va='bottom', fontsize=9)
-                
-                # Add legend with better positioning
-                ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
-                
-                # Adjust layout to make room for legend and rotated x-labels
-                plt.tight_layout(rect=[0, 0.1, 1, 0.95])
-                
-                st.pyplot(fig3)
+                # Check if we have valid data for the chart
+                if not performance_df.empty and len(performance_df) > 0 and pd.notnull(performance_df['Date']).any():
+                    # New visualization - Stock Performance as bar chart
+                    fig3, ax3 = plt.subplots()
+                    
+                    # Set width of bars
+                    barWidth = 0.4
+                    
+                    # Set position of bars on X axis
+                    r1 = range(len(performance_df))
+                    r2 = [x + barWidth for x in r1]
+                    
+                    # Create bars
+                    ax3.bar(r1, performance_df['Vest Price'], width=barWidth, label='FMV at Vesting', color='#4e79a7')
+                    ax3.bar(r2, performance_df['Sale Price'], width=barWidth, label='Sale Price', color='#f28e2c')
+                    
+                    # Add labels and title
+                    ax3.set_xlabel('Sale Date')
+                    ax3.set_ylabel('Price ($)')
+                    ax3.set_title('Stock Performance: Vest Price vs Sale Price', fontweight='bold')
+                    ax3.set_xticks([r + barWidth/2 for r in range(len(performance_df))])
+                    
+                    # Format dates safely
+                    date_labels = []
+                    for d in performance_df['Date']:
+                        try:
+                            if pd.notnull(d):
+                                date_labels.append(d.strftime('%Y-%m-%d'))
+                            else:
+                                date_labels.append('')
+                        except:
+                            date_labels.append('')
+                    
+                    ax3.set_xticklabels(date_labels, rotation=45)
+                    
+                    # Add value labels on top of bars
+                    for i, v in enumerate(performance_df['Vest Price']):
+                        if pd.notnull(v):
+                            ax3.text(i, v + 0.1, f"${v:,.2f}", ha='center', va='bottom', fontsize=9)
+                    
+                    for i, v in enumerate(performance_df['Sale Price']):
+                        if pd.notnull(v):
+                            ax3.text(i + barWidth, v + 0.1, f"${v:,.2f}", ha='center', va='bottom', fontsize=9)
+                    
+                    # Add legend with better positioning
+                    ax3.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+                    
+                    # Adjust layout to make room for legend and rotated x-labels
+                    plt.tight_layout(rect=[0, 0.1, 1, 0.95])
+                    
+                    st.pyplot(fig3)
+                else:
+                    st.info("Not enough data to generate stock performance chart. Please add sales data with valid dates.")
             
             with viz_tab3:
                 # New visualization - Capital Gains vs Tax by Financial Year
@@ -429,41 +498,47 @@ with tab2:
                     # Group by Financial Year
                     fy_data = sell_data.groupby("Financial Year")[["Capital Gain", "Tax on CG"]].sum().reset_index()
                     
-                    # Create bar chart
-                    fig4, ax4 = plt.subplots()
-                    
-                    # Set width of bars
-                    barWidth = 0.35
-                    
-                    # Set position of bars on X axis
-                    r1 = range(len(fy_data))
-                    r2 = [x + barWidth for x in r1]
-                    
-                    # Create bars with theme colors
-                    ax4.bar(r1, fy_data['Capital Gain'], width=barWidth, label='Capital Gain', color='#4e79a7')
-                    ax4.bar(r2, fy_data['Tax on CG'], width=barWidth, label='Tax on CG', color='#e15759')
-                    
-                    # Add labels and title
-                    ax4.set_xlabel('Financial Year')
-                    ax4.set_ylabel('Amount ($)')
-                    ax4.set_title('Capital Gains vs Tax by Financial Year', fontweight='bold')
-                    ax4.set_xticks([r + barWidth/2 for r in range(len(fy_data))])
-                    ax4.set_xticklabels(fy_data['Financial Year'])
-                    
-                    # Add value labels on top of bars
-                    for i, v in enumerate(fy_data['Capital Gain']):
-                        ax4.text(i, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
-                    
-                    for i, v in enumerate(fy_data['Tax on CG']):
-                        ax4.text(i + barWidth, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
-                    
-                    # Add legend with better positioning
-                    ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
-                    
-                    # Adjust layout to make room for legend
-                    plt.tight_layout(rect=[0, 0.05, 1, 0.95])
-                    
-                    st.pyplot(fig4)
+                    # Check if we have valid data for the chart
+                    if not fy_data.empty and len(fy_data) > 0:
+                        # Create bar chart
+                        fig4, ax4 = plt.subplots()
+                        
+                        # Set width of bars
+                        barWidth = 0.35
+                        
+                        # Set position of bars on X axis
+                        r1 = range(len(fy_data))
+                        r2 = [x + barWidth for x in r1]
+                        
+                        # Create bars with theme colors
+                        ax4.bar(r1, fy_data['Capital Gain'], width=barWidth, label='Capital Gain', color='#4e79a7')
+                        ax4.bar(r2, fy_data['Tax on CG'], width=barWidth, label='Tax on CG', color='#e15759')
+                        
+                        # Add labels and title
+                        ax4.set_xlabel('Financial Year')
+                        ax4.set_ylabel('Amount ($)')
+                        ax4.set_title('Capital Gains vs Tax by Financial Year', fontweight='bold')
+                        ax4.set_xticks([r + barWidth/2 for r in range(len(fy_data))])
+                        ax4.set_xticklabels(fy_data['Financial Year'])
+                        
+                        # Add value labels on top of bars
+                        for i, v in enumerate(fy_data['Capital Gain']):
+                            if pd.notnull(v):
+                                ax4.text(i, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
+                        
+                        for i, v in enumerate(fy_data['Tax on CG']):
+                            if pd.notnull(v):
+                                ax4.text(i + barWidth, v + 0.1, f"${v:,.2f}", ha='center', fontsize=9)
+                        
+                        # Add legend with better positioning
+                        ax4.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=2)
+                        
+                        # Adjust layout to make room for legend
+                        plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+                        
+                        st.pyplot(fig4)
+                    else:
+                        st.info("Not enough data to generate capital gains vs tax chart. Please add more sales data.")
                 else:
                     st.info("Financial Year data not available. Please ensure your data includes dates.")
         
@@ -481,7 +556,22 @@ with tab2:
         # Add button to clear all data
         if st.button("🗑️ Clear All Sales Data"):
             if st.session_state.get("confirm_clear_sales", False):
-                st.session_state["sales_data"] = pd.DataFrame()
+                # Create an empty DataFrame with the proper structure
+                empty_sales_df = pd.DataFrame({
+                    "Sell Date": pd.Series(dtype='datetime64[ns]'),
+                    "Shares Sold": pd.Series(dtype='float64'),
+                    "Sale Price": pd.Series(dtype='float64'),
+                    "FMV at Vesting": pd.Series(dtype='float64'),
+                    "Held > 12 Months": pd.Series(dtype='bool'),
+                    "Marginal Tax Rate": pd.Series(dtype='float64'),
+                    "Gross Value": pd.Series(dtype='float64'),
+                    "Capital Gain": pd.Series(dtype='float64'),
+                    "Tax on CG": pd.Series(dtype='float64'),
+                    "Net Proceeds": pd.Series(dtype='float64')
+                })
+                # Process the empty DataFrame to ensure it has all required columns
+                empty_sales_df = tax_engine.process_sales_data(empty_sales_df, tax_rate)
+                st.session_state["sales_data"] = empty_sales_df
                 st.rerun()
             else:
                 st.session_state["confirm_clear_sales"] = True
@@ -505,7 +595,19 @@ with tab2:
             num_rows="dynamic",
             use_container_width=True,
             hide_index=True,
-            key="sales_data_editor"  # Add a key for the data editor
+            key="sales_data_editor",  # Add a key for the data editor
+            column_config={
+                "Sell Date": st.column_config.DateColumn(
+                    "Sell Date",
+                    help="Date when RSUs were sold",
+                    format="YYYY-MM-DD",
+                    step=1,
+                ),
+                "Held > 12 Months": st.column_config.CheckboxColumn(
+                    "Held > 12 Months",
+                    help="Check if shares were held for more than 12 months (for CGT discount)",
+                ),
+            }
         )
         
         # Process the edited data only if it has changed
@@ -519,7 +621,7 @@ with tab2:
             st.rerun()
         
         # Create visualizations
-        if not sell_data.empty:
+        if not sell_data.empty and len(sell_data) > 0:
             st.markdown("### 📊 Visualizations")
             
             # Create tabs for different visualizations
@@ -580,7 +682,7 @@ with tab2:
                 ax3.set_ylabel('Price ($)')
                 ax3.set_title('Stock Performance: Vest Price vs Sale Price', fontweight='bold')
                 ax3.set_xticks([r + barWidth/2 for r in range(len(performance_df))])
-                ax3.set_xticklabels([d.strftime('%Y-%m-%d') if pd.notnull(d) else '' for d in performance_df['Date']], rotation=45)
+                ax3.set_xticklabels([d.strftime('%Y-%m-%d') for d in performance_df['Date']], rotation=45)
                 
                 # Add value labels on top of bars
                 for i, v in enumerate(performance_df['Vest Price']):
@@ -652,7 +754,22 @@ with tab2:
         # Add button to clear all data
         if st.button("🗑️ Clear All Sales Data"):
             if st.session_state.get("confirm_clear_sales", False):
-                st.session_state["sales_data"] = pd.DataFrame()
+                # Create an empty DataFrame with the proper structure
+                empty_sales_df = pd.DataFrame({
+                    "Sell Date": pd.Series(dtype='datetime64[ns]'),
+                    "Shares Sold": pd.Series(dtype='float64'),
+                    "Sale Price": pd.Series(dtype='float64'),
+                    "FMV at Vesting": pd.Series(dtype='float64'),
+                    "Held > 12 Months": pd.Series(dtype='bool'),
+                    "Marginal Tax Rate": pd.Series(dtype='float64'),
+                    "Gross Value": pd.Series(dtype='float64'),
+                    "Capital Gain": pd.Series(dtype='float64'),
+                    "Tax on CG": pd.Series(dtype='float64'),
+                    "Net Proceeds": pd.Series(dtype='float64')
+                })
+                # Process the empty DataFrame to ensure it has all required columns
+                empty_sales_df = tax_engine.process_sales_data(empty_sales_df, tax_rate)
+                st.session_state["sales_data"] = empty_sales_df
                 st.rerun()
             else:
                 st.session_state["confirm_clear_sales"] = True
@@ -660,16 +777,16 @@ with tab2:
     else:
         # Create an empty DataFrame with the necessary columns for sales data
         empty_sales_df = pd.DataFrame({
-            "Sell Date": [],
-            "Shares Sold": [],
-            "Sale Price": [],
-            "FMV at Vesting": [],
-            "Held > 12 Months": [],
-            "Marginal Tax Rate": [],
-            "Gross Value": [],
-            "Capital Gain": [],
-            "Tax on CG": [],
-            "Net Proceeds": []
+            "Sell Date": pd.Series(dtype='datetime64[ns]'),
+            "Shares Sold": pd.Series(dtype='float64'),
+            "Sale Price": pd.Series(dtype='float64'),
+            "FMV at Vesting": pd.Series(dtype='float64'),
+            "Held > 12 Months": pd.Series(dtype='bool'),
+            "Marginal Tax Rate": pd.Series(dtype='float64'),
+            "Gross Value": pd.Series(dtype='float64'),
+            "Capital Gain": pd.Series(dtype='float64'),
+            "Tax on CG": pd.Series(dtype='float64'),
+            "Net Proceeds": pd.Series(dtype='float64')
         })
         
         # Process the empty DataFrame to ensure it has all required columns
@@ -689,7 +806,19 @@ with tab2:
             num_rows="dynamic",
             use_container_width=True,
             hide_index=True,
-            key="sales_data_editor_empty"
+            key="sales_data_editor_empty",
+            column_config={
+                "Sell Date": st.column_config.DateColumn(
+                    "Sell Date",
+                    help="Date when RSUs were sold",
+                    format="YYYY-MM-DD",
+                    step=1,
+                ),
+                "Held > 12 Months": st.column_config.CheckboxColumn(
+                    "Held > 12 Months",
+                    help="Check if shares were held for more than 12 months (for CGT discount)",
+                ),
+            }
         )
         
         # Process the edited data only if it has changed and is not empty
