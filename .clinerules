@@ -1,0 +1,157 @@
+# Project Intelligence: Financial Planner - RSU Manager
+
+## Implementation Patterns
+
+### Code Organization
+- Streamlit application structure uses tabs for functional separation
+- Financial calculations are performed in a dedicated tax_engine.py module
+- Data processing uses pandas DataFrames as the primary data structure
+- Visualization is handled through matplotlib integration
+- Modular architecture separates UI (app.py) from business logic (tax_engine.py)
+- Error handling is implemented at multiple levels for robustness
+
+### User Preferences
+- Clear, tabular presentation of financial data
+- Excel as the primary format for data import/export
+- PDF for summary reports and documentation
+- Visual representation of financial data where appropriate
+- Option to load sample data, upload custom Excel files, or manually enter data
+- Interactive data editing directly in the application
+
+### Naming Conventions
+- Variables use snake_case
+- Financial terms are explicit (e.g., "Gross Value" rather than just "Value")
+- Tab names use emoji prefixes for visual distinction
+- Module names reflect their purpose (e.g., tax_engine.py)
+- Column names are standardized across the application
+- Button labels use emoji prefixes for visual distinction (e.g., "➕ Add New Entry")
+- Flexible column name handling to support various naming conventions
+
+### Critical Implementation Paths
+- RSU vesting calculations:
+  ```python
+  # In tax_engine.py
+  if "Gross Value" not in vesting_df.columns:
+      if "RSUs Vested" in vesting_df.columns and "FMV at Vesting" in vesting_df.columns:
+          vesting_df["Gross Value"] = vesting_df["RSUs Vested"] * vesting_df["FMV at Vesting"]
+  
+  vesting_df["Tax Payable"] = vesting_df["Gross Value"] * (tax_rate / 100)
+  vesting_df["Net Value"] = vesting_df["Gross Value"] - vesting_df["Tax Payable"]
+  ```
+
+- Capital gains calculations:
+  ```python
+  # In tax_engine.py
+  def calculate_capital_gain(sale_price, cost_base, shares_sold, long_term=False):
+      total_gain = (sale_price - cost_base) * shares_sold
+      
+      if long_term and total_gain > 0:
+          # Apply 50% CGT discount for assets held > 12 months
+          discounted_gain = total_gain * 0.5
+          return total_gain, discounted_gain
+      else:
+          # No discount for short-term gains or losses
+          return total_gain, total_gain
+  ```
+
+- Financial year determination:
+  ```python
+  # In tax_engine.py
+  def determine_financial_year(date):
+      """Convert a date to Australian financial year format (e.g., '2024-25')"""
+      if date.month >= 7:  # July to December
+          return f"{date.year}-{date.year + 1}"
+      else:  # January to June
+          return f"{date.year - 1}-{date.year}"
+  ```
+
+- Progressive tax calculation:
+  ```python
+  # In tax_engine.py
+  def calculate_income_tax(income, year="2024-25"):
+      brackets = tax_brackets[year]
+      tax = 0.0
+      
+      for i, bracket in enumerate(brackets):
+          if i < len(brackets) - 1:
+              next_threshold = brackets[i + 1]["threshold"]
+              if income > bracket["threshold"]:
+                  taxable_in_bracket = min(income, next_threshold) - bracket["threshold"]
+                  tax += taxable_in_bracket * bracket["rate"]
+          else:
+              # Highest bracket
+              if income > bracket["threshold"]:
+                  tax += (income - bracket["threshold"]) * bracket["rate"]
+      
+      return tax
+  ```
+
+### Known Challenges
+- Financial Year calculation requires careful handling of NaN values and column existence
+- Column name consistency between app.py and tax_engine.py must be maintained
+- Excel file handling requires careful error management
+- PDF generation has limited formatting capabilities
+- Sorting available years needs to handle None values and empty lists
+- Manual data entry requires validation to prevent incorrect data
+- Empty dataframes need special handling to prevent errors
+
+## Project Evolution
+
+### Initial Implementation
+- Basic RSU tracking with tax calculations
+- Simple sales recording and capital gains calculations
+- Basic financial summaries
+
+### Current Focus
+- Enhanced tax calculation engine with Australian tax specifics
+- EOY Tax Return Assistant for tax preparation
+- Manual data entry and editing capabilities
+- Robust error handling and column name standardization
+- Ensuring calculation accuracy
+- Improving user experience
+
+### Future Direction
+- Tax Optimization Engine implementation
+- Enhanced visualization
+- More robust error handling
+- Data validation
+- Multi-company support
+- Data persistence
+
+## Tool Usage Patterns
+
+### Data Processing
+- Pandas for all data manipulation
+- Excel for data import/export
+- BytesIO for in-memory file handling
+- Dedicated tax_engine.py module for tax calculations
+- Standardized column naming with flexible input handling
+
+### Visualization
+- Matplotlib for charts and graphs
+- Streamlit's built-in formatting for tabular data
+- Interactive data editing with st.data_editor
+- Dynamic row addition and deletion in data grids
+
+### User Interface
+- Streamlit components for all UI elements
+- Tab-based navigation for functional separation
+- Sidebar for inputs and configuration
+- Conditional rendering based on data availability
+- Interactive buttons for data management (add, clear)
+- Confirmation dialogs for destructive actions
+
+### Error Handling
+- Check for None values before operations
+- Filter out None values when sorting
+- Provide informative messages when data is missing
+- Use defensive programming to handle unexpected inputs
+- Handle empty dataframes gracefully
+- Standardize column names to prevent mismatches
+- Validate data types for critical operations
+
+## Memory Bank Maintenance
+- Update activeContext.md and progress.md after each significant change
+- Review all Memory Bank files when context needs clarification
+- Document new patterns and insights in .clinerules
+- Keep systemPatterns.md updated as architecture evolves
