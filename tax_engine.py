@@ -207,6 +207,9 @@ def process_vesting_data(vesting_df: pd.DataFrame, tax_rate: float) -> pd.DataFr
         vesting_df["Vesting Date"] = pd.to_datetime("today")
         date_column = "Vesting Date"
     
+    # Ensure datetime format for date column
+    vesting_df[date_column] = pd.to_datetime(vesting_df[date_column], errors='coerce')
+    
     # Standardize RSU column names
     rsu_column = None
     if "RSU Vested" in vesting_df.columns:
